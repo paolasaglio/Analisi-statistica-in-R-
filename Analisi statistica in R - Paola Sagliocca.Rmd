@@ -1,0 +1,668 @@
+--- 
+title: "Fondamenti di scienza dei dati"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+       highlight: kate
+---
+
+```{r setup, echo=FALSE}
+library(knitr)
+library(rmdformats)
+
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r include=FALSE}
+# Dataset utilizzati:
+
+## #Dataset Hackerrank con risposte testuali (ma domande in codice)
+library(dplyr)
+library(readr)
+values = read_csv("C:/Users/Paola Sagliocca/Desktop/UNIUD/6) MATERIALE LEZIONI/FONDAMENTI DI SCIENZA DEI DATI/Esame Fondamenti Scienza dei dati - Paola Sagliocca/HackerRank-Developer-Survey-2018-Values.csv")
+
+```
+
+
+```{r include=FALSE}
+#Dataset Stackoverflow 2018 con risposte testuali
+library(readr)
+library(dplyr)
+
+StackOverflow = read_csv("C:/Users/Paola Sagliocca/Desktop/UNIUD/6) MATERIALE LEZIONI/FONDAMENTI DI SCIENZA DEI DATI/Esame Fondamenti Scienza dei dati - Paola Sagliocca/StackOverflow-survey_results_public.csv")
+```
+
+
+# COSA E' HACKERRANK?
+
+##
+
+HackerRank è una società tecnologica che mette a disposizione di aziende e sviluppatori una piattaforma online con lo scopo di mettere in contatto sviluppatori e aziende.
+
+Nel 2018 HackerRank ha sottoposto a oltre 25000 utenti, sia sviluppatori che responsabili delle assunzioni nelle aziende, un sondaggio online di 10 minuti per indagare sulle competenze, il background formativo, il ruolo attuale e altro ancora degli sviluppatori che hanno aderito, e sulle esigenze delle aziende al giorno d'oggi.
+
+
+
+# IL GENERE DEGLI SVILUPPATORI CHE HANNO RISPOSTO AL SONDAGGIO
+Notiamo fin da subuto che c'è una netta minoranza delle donne programmatrici rispetto agli uomini:
+
+```{r echo=FALSE} 
+library(dplyr)
+library(plotrix)
+
+numeri = values %>%
+ group_by(q3Gender) %>%
+ summarize(count = n()) 
+
+      
+statistica=c( 4122, 125, 20774 )
+cols=c("pink", "#E0AFEE", "lightblue")
+labs=c("Female","Non-Binary","Male")
+perc=round(statistica/sum(statistica)*100)
+perc= paste(perc,"%",sep="")
+lbs=paste(labs,perc,statistica)
+
+pie(statistica, main= "Genere", labels = lbs, col=cols)
+
+```
+
+
+# DA DOVE PROVENGONO GLI SVILUPPATORI CHE HANNO RISPOSTO AL SONDAGGIO?
+
+La maggiorparte degli intervistati sia uomini che donne proviene dall'India:
+L'India infatti è un paese dal punto di vista tecnologico molto all'avanguardia e che investe molto sullo sviluppo scientifico e informatico.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+
+library(rworldmap)
+library(dplyr)
+library(RColorBrewer)
+
+country = values %>%
+  group_by(CountryNumeric2) %>%
+  count() %>% 
+  arrange(desc(n))
+
+m = joinCountryData2Map(as.data.frame(country), joinCode = "NAME", nameJoinColumn="CountryNumeric2", ) 
+
+mapCountryData(m, nameColumnToPlot = "n", mapTitle="Nazionalità",
+              colourPalette = brewer.pal(4, "PuRd"),
+               oceanCol="#2e889a",
+               missingCountryCol="#efddee") 
+
+  
+```
+
+
+
+## Nazionalità Donne
+
+```{r, echo=FALSE}
+library("dplyr")  
+library(highcharter)
+
+nazionalità_donne= values %>%
+  group_by(CountryNumeric2) %>%
+  filter(q3Gender == "Female") %>%
+  summarize(count = n()) %>%
+  arrange(desc(count)) %>%
+  mutate(Country= reorder (CountryNumeric2,count))%>%
+  top_n(20) %>%
+  
+
+  hchart('bar', hcaes(x = 'Country', y = 'count')) %>% 
+  hc_title(text = 'Nazionalità Donne') %>% 
+  hc_colors("pink") %>%  
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_xAxis(title = list(text = "Paesi"))
+
+  nazionalità_donne  
+```
+
+## Nazionalità Uomini
+
+```{r, echo=FALSE}
+library("dplyr")  
+library(highcharter)
+
+##grafico che mostra dove gli uomini sono più frequenti
+nazionalità_uomini= values %>%
+  group_by(CountryNumeric2) %>%
+  filter(q3Gender == "Male") %>%
+  summarize(count = n()) %>%
+  filter(!is.na(CountryNumeric2)) %>%
+  arrange(desc(count)) %>%
+  mutate(Country= reorder (CountryNumeric2,count))%>%
+  top_n(20) %>%
+ 
+  hchart('bar', hcaes(x = 'Country', y = 'count')) %>% 
+  hc_title(text = 'Nazionalità uomini') %>% 
+  hc_colors("lightblue") %>%  
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_xAxis(title = list(text = "Paesi"))
+
+nazionalità_uomini
+```
+
+
+
+
+# CHE ETA' HANNO GLI SVILUPPATORI CHE HANNO RISPOSTO AL SONDAGGIO? 
+Vediamo che il picco (oltre 12000 persone) è nel range d'età tra i 18 e i 24 anni e a seguire vi è il range d’età tra 25-34 anni.
+
+```{r, echo=FALSE, fig.align='center'}
+ library(dplyr)
+library(highcharter)
+
+values %>%
+  group_by(q2Age) %>% 
+  count() %>%
+  ungroup() %>%
+ # mutate(percent = round((n / sum(n)) * 100, 2)) %>%
+  mutate(Età= reorder (q2Age, n))%>%
+  
+
+hchart('line', hcaes(x = 'Età', y = 'n')) %>% 
+ hc_title(text = 'Età degli sviluppatori che hanno risposto al sondaggio') %>% 
+ hc_colors("#9F2042") %>% 
+ hc_add_theme(hc_theme_darkunica()) %>%
+ hc_xAxis(title = list(text = "Età "))
+
+```
+
+
+# A CHE ETA' HANNO INIZIATO A PROGRAMMARE?
+Le donne che hanno iniziato a programmare presto (5-10 anni e 11-15 anni) sono pochissime rispetto agli uomini.
+
+```{r, echo=FALSE, fig.align='center'}
+
+library("dplyr")  
+library(highcharter)
+
+values %>% 
+  filter(!q1AgeBeginCoding %in% '#NULL!') %>% 
+    group_by(q3Gender, q1AgeBeginCoding) %>% 
+    filter(q3Gender %in% c('Male','Female')) %>%
+    count() %>% 
+
+  hchart('column', hcaes(x = 'q1AgeBeginCoding', y = 'n', group = 'q3Gender')) %>% 
+  hc_title(text = 'Età in cui hanno iniziato a programmare uomini e donne') %>%
+  hc_colors(c("pink", "lightblue")) %>% 
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_xAxis(title = list(text = "A che età hanno iniziazto a porgrammare")) %>% 
+  hc_yAxis(title = list(text = "Numero di rispondenti"))
+
+
+```
+
+# IN QUALE PAESE SI E' INIZIATO A PROGRAMMARE PRIMA?
+I Paesi in cu si è iniziato a programmare più presto sono gli Stati Uniti, l'India e il Regno Unito.
+
+```{r, echo=FALSE}
+library(dplyr)
+library(highcharter)
+
+values%>%
+  filter(!is.na(CountryNumeric2), CountryNumeric2!="") %>%  
+  filter(q1AgeBeginCoding == "5 - 10 years old") %>%
+  group_by(CountryNumeric2) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count)) %>%
+  ungroup() %>%
+  mutate(Country = reorder(CountryNumeric2,Count)) %>%
+ head(15) %>%
+  
+  hchart('bar', hcaes(x = 'Country', y = 'Count')) %>% 
+  hc_title(text = 'In quale Paese si è iniziato a studiare programmazione prima?') %>% 
+  hc_colors("#9F2042") %>%  
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_xAxis(title = list(text = "Paesi"))
+
+```
+
+# CHE PERCORSO DI ISTRUZIONE HANNO COMPIUTO UOMINI E DONNE PER ARRIVARE AL LORO STATO ATTUALE? 
+La perenutale di ragazzi che imparano da autodidatta è di molto maggiore rispetto a quella delle ragazze.
+
+## Donne
+
+```{r, echo=FALSE}
+#--femmine-----
+library(dplyr)
+library(ggplot2)
+library(RColorBrewer)
+
+    gender_Autodidatta_Scuola = values %>% 
+     filter(q3Gender %in% c("Male", "Female")) %>% 
+     group_by(q3Gender,q6LearnCodeSelfTaught ) %>% 
+     count() %>%
+     ungroup() %>% 
+     group_by(q3Gender) %>%
+     mutate(percent = (round(n/sum(n), digits=3))*100)
+
+     s = as.data.frame(gender_Autodidatta_Scuola)
+     s$q6LearnCodeSelfTaught = as.character(s$q6LearnCodeSelfTaught)
+    # s[which(s$q6LearnCodeSelfTaught==""),]$q6LearnCodeSelfTaught = "Percorso scolastico"   
+     s$q6LearnCodeSelfTaught = as.factor(s$q6LearnCodeSelfTaught)
+
+     
+female_Autodidatta_Scuola = subset(s, q3Gender=="Female")
+pf =
+  ggplot(female_Autodidatta_Scuola, aes(x="", y = percent, fill=q6LearnCodeSelfTaught)) + 
+  geom_bar(width=1, stat="identity") +
+  coord_polar(theta="y", start=0) +
+  scale_fill_brewer(palette ="RdPu") +
+  theme_minimal() +
+  labs(title = "Come hanno imparato a programmare le donne che hanno risposto al sondaggio?", x="")
+pf
+
+```
+
+## Uomini
+
+```{r, echo=FALSE}
+#--uomini-----
+library(dplyr)
+library(ggplot2)
+library(RColorBrewer)
+ 
+    gender_Autodidatta_Scuola = values %>% 
+    filter(q3Gender %in% c("Male", "Female")) %>% 
+    group_by(q3Gender,q6LearnCodeSelfTaught ) %>% 
+    count() %>%
+    ungroup() %>% 
+    group_by(q3Gender) %>%
+    mutate(percent = (round(n/sum(n), digits=3))*100)
+
+    s = as.data.frame(gender_Autodidatta_Scuola)
+    s$q6LearnCodeSelfTaught = as.character(s$q6LearnCodeSelfTaught)
+    s[which(s$q6LearnCodeSelfTaught==""),]$q6LearnCodeSelfTaught = "Percorso scolastico"   
+    s$q6LearnCodeSelfTaught = as.factor(s$q6LearnCodeSelfTaught)
+
+   
+male_Autodidatta_Scuola = subset(s, q3Gender=="Male")
+pm = ggplot(male_Autodidatta_Scuola, aes(x="", y = percent, fill=q6LearnCodeSelfTaught)) + 
+geom_bar(width=1, stat="identity") +                                                
+coord_polar(theta="y", start=0) +                                                    
+scale_fill_brewer(palette ="Blues") +                                                               
+theme_minimal() +                                                                    
+labs(title = "Come hanno imparato a programmare gli uomini che hanno risposto al sondaggio?", x="")  
+pm
+
+```
+
+
+# IN CHE MODO HANNO STUDIATO PROGRAMMAZIONE?
+La diffusione di Internet ha stravolto i tradizionali mezzi di apprendimento: Siti e risorse digitali hanno preso il posto dei libri cartacei.
+
+## Donne:
+
+```{r, echo=FALSE}
+library(dplyr)
+library(highcharter)
+
+
+colnames(values)[c(235,236,237,238,239,240,241)]= c("StackOverflow", "Youtube", "MOOC","Competition_Coding_Sites","Online_Tutorial", "Books","Academic_Paper")
+
+q30 = c("StackOverflow", "Youtube", "MOOC","Competition_Coding_Sites","Online_Tutorial", "Books","Academic_Paper")
+
+
+
+freqCount = function(x){   
+  z = data.frame(table(factor(x))) %>% 
+    filter(Var1!="") %>%   
+    filter(Var1!="#NULL!")
+  return(z$Freq)
+}
+
+all_female = values %>%
+            filter(q3Gender=="Female")
+
+q30_all= subset(all_female,select = q30)  
+
+q30_all_freq = as.data.frame(apply(q30_all,2, freqCount))
+q30_all_freq$q30 = row.names(q30_all_freq)
+names(q30_all_freq) = c("Frequency","q30")
+q30_all_freq = q30_all_freq %>% 
+arrange(desc(Frequency))
+
+highchart() %>%
+  hc_xAxis(categories = q30_all_freq$q30) %>% 
+  hc_add_series(name = "Total", data = q30_all_freq$Frequency, color = "pink") %>%  
+  hc_title(text = "<b>Come hanno studiato programmazione le donne</b>",
+           margin = 20, align = "center",
+           style = list(color = "white", useHTML = TRUE)) %>%  
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_chart(type = "bar")
+
+```
+
+
+## Uomini:
+
+```{r, echo=FALSE}
+
+library(dplyr)
+library(highcharter)
+
+
+colnames(values)[c(235,236,237,238,239,240,241)]= c("StackOverflow", "Youtube", "MOOC","Competition_Coding_Sites","Online_Tutorial", "Books","Academic_Paper")
+
+q30 = c("StackOverflow", "Youtube", "MOOC","Competition_Coding_Sites","Online_Tutorial", "Books","Academic_Paper")
+
+
+
+freqCount = function(x){   
+  z = data.frame(table(factor(x))) %>% 
+    filter(Var1!="") %>%    
+    filter(Var1!="#NULL!")
+  return(z$Freq)
+}
+
+all_male = values %>%
+            filter(q3Gender=="Male")
+
+q30_all= subset(all_male,select = q30)  
+
+q30_all_freq = as.data.frame(apply(q30_all,2, freqCount))
+q30_all_freq$q30 = row.names(q30_all_freq)
+names(q30_all_freq) = c("Frequency","q30")
+
+q30_all_freq = q30_all_freq %>% 
+arrange(desc(Frequency))
+
+highchart() %>%
+  hc_xAxis(categories = q30_all_freq$q30) %>% 
+  hc_add_series(name = "Total", data = q30_all_freq$Frequency, color = "lightblue") %>%  
+  hc_title(text = "<b>Come hanno studiato programmazione le donne</b>",
+           margin = 20, align = "center",
+           style = list(color = "white", useHTML = TRUE)) %>%  
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_chart(type = "bar")
+
+```
+
+
+# QUALI PERCORSI UNIVERSITARI SONO STATI I PIU' FREQUENTATI? 
+Per entrambi i generi i corsi più gettonati sono Computer Science e ingegneria informatica e a seguire Sistemi informatici. Per le donne vi è, inoltre, la tendenza verso lauree di tipo umanistico, mentre per gli uomini di tipo ingegneristico.
+
+## Donne
+
+```{r,echo=FALSE}
+library("dplyr")  
+library(highcharter)
+
+StackOverflow %>%
+  group_by(UndergradMajor, Gender)%>%
+  count()%>%
+  ungroup()%>%
+  filter(!is.na(UndergradMajor),UndergradMajor!="I never declared a major",Gender == "Female") %>%
+  #filter(MajorUndergrad!="I never declared a major")
+  mutate(percent = round((n / sum(n)) * 100, 2)) %>%
+  mutate( Università= reorder(UndergradMajor, percent)) %>%
+  arrange(desc(n))%>%
+  
+  hchart('bar', hcaes(x = 'Università', y = 'percent')) %>% 
+  hc_title(text = 'Quali percorsi universitari sono stati i più frequentai per le donne?') %>% 
+  hc_colors("pink") %>% 
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_xAxis(title = list(text = "Università"))
+```
+
+## Uomini
+
+```{r, echo=FALSE}
+library("dplyr")  
+library(highcharter)
+
+StackOverflow %>%
+  group_by(UndergradMajor, Gender)%>%
+  count()%>%
+  ungroup()%>%
+  filter(!is.na(UndergradMajor), Gender == "Male", UndergradMajor!= "I never declared a major") %>%
+  mutate(percent = round((n / sum(n)) * 100, 2)) %>%
+  mutate( Università= reorder(UndergradMajor, percent)) %>%
+  arrange(desc(n))%>%
+  
+  hchart('bar', hcaes(x = 'Università', y = 'percent')) %>% 
+  hc_title(text = 'Quali percorsi universitari sono stati i più frequentati per gli uomini?') %>% 
+  hc_colors("lightblue") %>% 
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_xAxis(title = list(text = "Università"))
+
+```
+
+
+# ATTUALMENTE CHE LAVORO STANNO SVOLGENDO?
+I lavori più svolti sono: Software Engineering, Web Development, Software Architecture, Data Scientist, Data Analist, Network and Database Administrator...
+
+## 
+
+```{r, echo=FALSE}
+library(dplyr)
+library(plotrix)
+library(tm)
+library(wordcloud2)
+library(wordcloud)
+library("RColorBrewer")
+
+
+wordcloud(values$q0009_other,scale=c(4,.5),
+          min.freq=1,
+          max.words=100,
+	        random.order= FALSE,
+        	random.color=FALSE, 
+        	rot.per=0.1,
+        	colors=brewer.pal(8, "Dark2"),
+        	ordered.colors=FALSE,
+        	use.r.layout=FALSE,
+	        fixed.asp=TRUE)
+```
+
+## 
+
+```{r, echo=FALSE}
+library("dplyr")  
+library(highcharter)
+
+values %>%
+  group_by(q9CurrentRole) %>% 
+  filter(q9CurrentRole!="Student")%>%
+  count() %>%
+  ungroup() %>%
+  mutate(percent = round((n / sum(n)) * 100, 2)) %>%
+  arrange(desc(n))%>%
+  
+hchart('bar', hcaes(x = 'reorder(q9CurrentRole, percent)', y = 'percent')) %>% 
+  hc_title(text = 'Che lavoro stanno svolgendo attualmente') %>% 
+  hc_colors("#9F2042") %>% 
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_xAxis(title = list(text = "Other Expectations - Unigram"))
+
+
+```
+
+# QUAL E' IL LORO LIVELLO DI LAVORO?
+Le donne hanno molta più probabilità di essere in posizioni junior rispetto agli sviluppatori uomini.
+
+## Donne
+
+```{r, echo=FALSE}
+library("dplyr")  
+library(highcharter)
+library(RColorBrewer)
+
+values %>%
+group_by(q8JobLevel) %>%
+filter(q3Gender %in% 'Female') %>%  
+filter(!q8JobLevel %in% c('Student','')) %>% 
+count() %>% 
+ungroup()%>%
+
+mutate(percent = round((n / sum(n)) * 100, 2)) %>%
+  
+#hchart("treemap", hcaes(x = 'q8JobLevel', value = 'percent',color = 'n')) 
+ 
+
+ hchart(
+    "treemap", 
+    hcaes(x = q8JobLevel, value = percent, color = n)
+    ) %>%
+ hc_colorAxis(minColor = brewer.pal(9, "RdPu")[1],
+               maxColor = brewer.pal(9, "RdPu")[4])
+```
+
+## Uomini
+
+```{r, echo=FALSE}
+   #Livello di lavoro uomini
+
+library(highcharter)
+library(dplyr)
+
+values %>%
+  filter(q3Gender %in% c('Male')) %>% 
+  filter(!q8JobLevel %in% c('Student','')) %>% 
+  group_by(q8JobLevel) %>%  
+  count() %>% 
+ungroup()%>%
+
+mutate(percent = round((n / sum(n)) * 100, 2)) %>%
+
+  hchart(
+    "treemap", 
+    hcaes(x = q8JobLevel, value = percent, color = n)
+    ) %>%
+ hc_colorAxis(minColor = brewer.pal(9, "Blues")[1],
+               maxColor = brewer.pal(9, "Blues")[4])
+```
+
+
+# CAMPI IN EVOLUZIONE NELL INFORMATICA
+Data science,Big Data, App/Web Development, Cyber security, Cloud Computing, Artificial Intelligence, Machine Learning, Robotics, Blockchain,
+
+```{r, echo=FALSE}
+library(dplyr)
+library(plotrix)
+library(tm)
+library(wordcloud2)
+library(wordcloud)
+library(RColorBrewer)
+
+
+wc = wordcloud(values$q0027_other,scale=c(4,.5),min.freq=2,max.words=100,
+	random.order= FALSE, random.color=FALSE, rot.per=.1,
+	colors=brewer.pal(8, "Dark2"),ordered.colors=FALSE,use.r.layout=FALSE,
+	fixed.asp=TRUE)
+```
+
+# A QUALI COMPETENZE PRESTANO PIU' ATTENZIONE I RESPONSABILI DELLE ASSUNZIONI AL MOMENTO DELLA CANDIDATURA?
+
+## Cosa guardano maggiormente i responsabili delle aziende in un curriculum:
+Le esperienze lavorative pregresse e il percorso universitario sono fattori fondamental che influiscono sulla candidatura, tuttavia c'è anche un'altra cosa che interessa ai responsabili delle assunzioni: le pubblicazioni e i progetti personali.
+
+```{r, echo=FALSE}
+library("dplyr")  
+library(highcharter)
+
+cols_q20 = names(values)[71:83] 
+
+new_list = list()   
+for(i in 1:13){   
+    new_list[[i]] = values %>% 
+                     group_by_(cols_q20[i]) %>%
+                     count() %>% 
+                     rename('q20' = !!cols_q20[i])
+}
+
+skills = bind_rows(new_list)
+skills %>% 
+  filter(! q20 %in% c('','#NULL!' )) %>%
+  group_by(q20) %>% arrange(desc(n)) %>% 
+ 
+  hchart('column', hcaes(x = 'q20', y = 'n')) %>% 
+  hc_title(text = 'COSA GUARDANO I RESPONSABILI DELLE ASSUNZIONI IN UN CURRICULUM') %>% 
+  hc_colors("#9F2042") %>% 
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_xAxis(title = list(text = "Skills"))
+```
+
+## Linguaggi di programmazione più richiesti dalle aziende:
+Al giorno d'oggi Javascript e Java sono oramai diventate fondamentali per entrare nel mondo del lavoro.
+
+```{r, echo=FALSE}
+library(highcharter)
+library(dplyr)
+
+cols_q20 = names(values)[97:113]  
+
+new_list = list()
+
+for(i in 1:17){                  
+  new_list[[i]] = values %>%     
+    #filter(q3Gender %in% 'Female') %>%    
+  group_by_(cols_q20[i]) %>% 
+  count() %>% 
+  rename('q20' = cols_q20[i])
+               }
+
+linguaggi = bind_rows(new_list)   
+linguaggi %>% 
+  filter(! q20 %in% c('','#NULL!' )) %>% 
+  group_by(q20) %>%
+  arrange(desc(n)) %>% 
+  
+  
+hchart('column', hcaes(x = 'q20', y = 'n')) %>% 
+hc_title(text = ' LINGUAGGI DI PROGRAMMAZIONE PIU RICHIESTI DALLE AZIENDE') %>% 
+hc_colors("#9F2042") %>% 
+hc_add_theme(hc_theme_darkunica()) %>%
+hc_xAxis(title = list(text = "Linguaggi"))
+
+```
+
+
+## Abilità più richieste dalle aziende:
+Per i responsabili delle assunzioni non sono importanti solo le competenze tecniche, ma anche capacità intrinseche come la capacità di risolvere i problemi e il debugging.
+
+```{r, echo=FALSE}
+library(dplyr)
+library(highcharter)
+
+cols_q20 = names(values)[86:95]  
+
+
+new_list = list() 
+
+
+for(i in 1:10){  
+    new_list[[i]] = values %>%                  
+                    group_by_(cols_q20[i]) %>%  
+                    count() %>%                 
+                    rename('q20' = cols_q20[i])  
+  }
+
+
+
+big_list = bind_rows(new_list)
+big_list %>%     
+  filter(! q20 %in% c('','#NULL!' )) %>%   
+  group_by(q20) %>%
+  arrange(desc(n))%>%  
+  
+  hchart('column', hcaes(x = 'q20', y = 'n')) %>% 
+    hc_title(text = 'ABILITA PIU RICHIESTE DALLE AZIENDE') %>% 
+    hc_colors("#9F2042") %>% 
+    hc_add_theme(hc_theme_darkunica()) %>%
+    hc_xAxis(title = list(text = "Abilità"))
+```
+
+# CONCLUSIONI
+
+Per riepilogare...
+
+In questa analisi abbiamo constatato che:
+
+* Nonostante l'impegno di questi ultimi anni a livellare le differenze di genere, ancora nel 2018 esisteva una effettiva discrepanza tra uomini e donne in campo informatico;
+
+* Per entrare al meglio nel mondo del lavoro bisogna sviluppare capacità di problem solving e debuggin, imparare i linguaggi di programmazione più richiesti e soprattutto sviluppare progetti personali e pubblicazioni.
+
